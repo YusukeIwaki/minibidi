@@ -1,7 +1,7 @@
 require 'async'
 require 'async/variable'
 
-module MiniBiDi
+module Minibidi
   class Browser
     def initialize(async_websocket_connection)
       @websocket = async_websocket_connection

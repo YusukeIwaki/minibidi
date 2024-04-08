@@ -1,4 +1,4 @@
-module MiniBiDi
+module Minibidi
   class Firefox
     def self.launch(&block)
       FirefoxLauncher.new.launch(&block)

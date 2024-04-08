@@ -1,6 +1,6 @@
 require 'base64'
 
-module MiniBiDi
+module Minibidi
   class BrowsingContext
     def initialize(browser, context_id)
       @browser = browser

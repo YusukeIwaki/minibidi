@@ -6,7 +6,7 @@ require 'protocol/websocket/json_message'
 require 'timeout'
 require 'tmpdir'
 
-module MiniBiDi
+module Minibidi
   class FirefoxLauncher
     def launch(&block)
       raise ArgumentError, "block is required" unless block
@@ -28,7 +28,6 @@ module MiniBiDi
         trap(:HUP) { proc.kill ; proc.dispose }
 
         endpoint = wait_for_ws_endpoint(proc)
-        puts "Endpoint --- #{endpoint}"
 
         Async::Reactor.run do
           Async::WebSocket::Client.connect(Async::HTTP::Endpoint.parse("#{endpoint}/session")) do |async_websocket_connection|
@@ -159,30 +158,5 @@ module MiniBiDi
     rescue Timeout::Error
       raise LaunchError.new("Timed out after 30 seconds while trying to connect to the browser.")
     end
-
-    class BrowserProcess
-      def initialize(*command)
-        stdin, @stdout, @stderr, @thread = Open3.popen3(*command)
-        stdin.close
-        @pid = @thread.pid
-      rescue Errno::ENOENT => err
-        raise LaunchError.new("Failed to launch browser process: #{err}")
-      end
-
-      def kill
-        Process.kill(:KILL, @pid)
-      rescue Errno::ESRCH
-        # already killed
-      end
-
-      def dispose
-        [@stdout, @stderr].each { |io| io.close unless io.closed? }
-        @thread.terminate
-      end
-
-      attr_reader :stdout, :stderr
-    end
-
-    class LaunchError < StandardError ; end
   end
 end
