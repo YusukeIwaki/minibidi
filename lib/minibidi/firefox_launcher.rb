@@ -7,6 +7,12 @@ require 'timeout'
 require 'tmpdir'
 
 module Minibidi
+  class Firefox
+    def self.launch(&block)
+      FirefoxLauncher.new.launch(&block)
+    end
+  end
+
   class FirefoxLauncher
     def launch(&block)
       raise ArgumentError, "block is required" unless block

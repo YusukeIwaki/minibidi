@@ -105,7 +105,7 @@ module Minibidi
         new(
           type: payload[:error],
           message: payload[:message],
-          stacktrace: payload[:stacktrace].split("\n"),
+          stacktrace: (payload[:stacktrace] || '').split("\n"),
         )
       end
 

@@ -11,11 +11,12 @@ module Minibidi
       bidi_call_async('browsingContext.navigate', { url: url, wait: :interactive }).wait
     end
 
-    def capture_screenshot(origin:, format:)
+    def capture_screenshot(origin: nil, format: nil, clip: nil)
       result = bidi_call_async('browsingContext.captureScreenshot', {
         origin: origin,
         format: format,
-      }).wait
+        clip: clip,
+      }.compact).wait
 
       Base64.strict_decode64(result[:data])
     end
