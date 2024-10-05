@@ -47,6 +47,16 @@ module Minibidi
       }.compact).wait
     end
 
+    def set_viewport(width:, height:, device_pixel_ratio: nil)
+      bidi_call_async('browsingContext.setViewport', {
+        viewport: {
+          width: width,
+          height: height,
+        },
+        devicePixelRatio: device_pixel_ratio,
+      }.compact).wait
+    end
+
     private
 
     def bidi_call_async(method_, params = {})

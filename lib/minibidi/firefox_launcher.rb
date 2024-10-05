@@ -33,13 +33,21 @@ module Minibidi
 
       Dir.mktmpdir('minibidi') do |tmp|
         create_user_profile(tmp)
-
-        proc = BrowserProcess.new(
-          Firefox.discover_binary,
+        args = [
           "--remote-debugging-port=0",
           "--profile #{tmp}",
           "--no-remote",
-          "--foreground",
+        ]
+        if RUBY_PLATFORM =~ /darwin/
+          args << "--foreground"
+        end
+        if %w[true 1].include?(ENV['HEADLESS'])
+          args << "--headless"
+        end
+
+        proc = BrowserProcess.new(
+          Firefox.discover_binary,
+          *args,
           "about:blank",
         )
         at_exit { proc.kill }
