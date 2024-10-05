@@ -11,6 +11,22 @@ module Minibidi
       bidi_call_async('browsingContext.navigate', { url: url, wait: :interactive }).wait
     end
 
+    def realms
+      result = bidi_call_async('script.getRealms').wait
+      result[:realms].map do |realm|
+        Realm.new(
+          browsing_context: self,
+          id: realm[:realm],
+          origin: realm[:origin],
+          type: realm[:type],
+        )
+      end
+    end
+
+    def default_realm
+      realms.find { |realm| realm.type == 'window' }
+    end
+
     def capture_screenshot(origin: nil, format: nil, clip: nil)
       result = bidi_call_async('browsingContext.captureScreenshot', {
         origin: origin,
