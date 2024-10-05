@@ -1,5 +1,6 @@
 require 'async'
 require 'async/variable'
+require 'json'
 
 module Minibidi
   class Browser
@@ -8,10 +9,8 @@ module Minibidi
       @debug_protocol = %w[1 true].include?(ENV['DEBUG'])
 
       Async do
-        while data = async_websocket_connection.read
-          if message = Protocol::WebSocket::JSONMessage.wrap(data)
-            handle_received_message_from_websocket(message.to_h)
-          end
+        while message = async_websocket_connection.read
+          handle_received_message_from_websocket(message.to_h)
         end
       end
 
@@ -79,7 +78,7 @@ module Minibidi
 
     def send_message_to_websocket(payload)
       debug_print_send(payload)
-      message = Protocol::WebSocket::JSONMessage.generate(payload)
+      message = Protocol::WebSocket::TextMessage.new(JSON.generate(payload))
       message.send(@websocket)
       @websocket.flush
     end

@@ -5,6 +5,7 @@ class ExampleTest < Minitest::Test
   def test_firefox_example
     Minibidi::Firefox.launch do |browser|
       context = browser.create_browsing_context
+      context.set_viewport(width: 1024, height: 640)
       context.navigate("https://github.com/YusukeIwaki")
       data = context.capture_screenshot(origin: :viewport, format: { type: :png })
 
@@ -47,6 +48,15 @@ class ExampleTest < Minitest::Test
       open('YusukeIwaki.png', 'wb') do |f|
         f.write(data)
       end
+    end
+  end
+
+  def test_firefox_reload
+    Minibidi::Firefox.launch do |browser|
+      context = browser.create_browsing_context
+      context.navigate("https://example.com")
+      sleep 2
+      context.reload
     end
   end
 end

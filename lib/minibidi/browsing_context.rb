@@ -7,8 +7,11 @@ module Minibidi
       @context_id = context_id
     end
 
-    def navigate(url)
-      bidi_call_async('browsingContext.navigate', { url: url, wait: :interactive }).wait
+    def navigate(url, wait: :interactive)
+      bidi_call_async('browsingContext.navigate', {
+        url: url,
+        wait: wait,
+      }.compact).wait
     end
 
     def realms
@@ -35,6 +38,23 @@ module Minibidi
       }.compact).wait
 
       Base64.strict_decode64(result[:data])
+    end
+
+    def reload(ignore_cache: nil, wait: nil)
+      bidi_call_async('browsingContext.reload', {
+        ignoreCache: ignore_cache,
+        wait: wait,
+      }.compact).wait
+    end
+
+    def set_viewport(width:, height:, device_pixel_ratio: nil)
+      bidi_call_async('browsingContext.setViewport', {
+        viewport: {
+          width: width,
+          height: height,
+        },
+        devicePixelRatio: device_pixel_ratio,
+      }.compact).wait
     end
 
     private

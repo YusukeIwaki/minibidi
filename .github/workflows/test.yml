@@ -1,0 +1,25 @@
+name: Test
+
+on: [pull_request]
+
+jobs:
+  minitest:
+    name: minitest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup firefox-devedition
+        # https://support.mozilla.org/ja/kb/install-firefox-linux
+        run: |
+          wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O- | sudo tee /etc/apt/keyrings/packages.mozilla.org.asc
+          echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" | sudo tee -a /etc/apt/sources.list.d/mozilla.list
+          sudo apt-get update
+          sudo apt-get install -y firefox-devedition
+          /usr/bin/firefox-devedition --version
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 3.3.5
+          bundler-cache: true
+      - run: bundle exec rake test
+        env:
+          HEADLESS: true

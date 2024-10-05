@@ -2,7 +2,6 @@ require 'async'
 require 'async/http/endpoint'
 require 'async/websocket'
 require 'open3'
-require 'protocol/websocket/json_message'
 require 'timeout'
 require 'tmpdir'
 
@@ -10,6 +9,21 @@ module Minibidi
   class Firefox
     def self.launch(&block)
       FirefoxLauncher.new.launch(&block)
+    end
+
+    def self.discover_binary
+      # check if macOS
+      if RUBY_PLATFORM =~ /darwin/
+        if File.exist?("/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox")
+          return "/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox"
+        end
+      elsif RUBY_PLATFORM =~ /linux/
+        if File.exist?("/usr/bin/firefox-devedition")
+          return "/usr/bin/firefox-devedition"
+        end
+      end
+
+      raise LaunchError, 'Firefox Developer Edition is not found. Please install it from https://www.mozilla.org/firefox/developer/'
     end
   end
 
@@ -19,13 +33,21 @@ module Minibidi
 
       Dir.mktmpdir('minibidi') do |tmp|
         create_user_profile(tmp)
-
-        proc = BrowserProcess.new(
-          "/Applications/Firefox Developer Edition.app/Contents/MacOS/firefox",
+        args = [
           "--remote-debugging-port=0",
           "--profile #{tmp}",
           "--no-remote",
-          "--foreground",
+        ]
+        if RUBY_PLATFORM =~ /darwin/
+          args << "--foreground"
+        end
+        if %w[true 1].include?(ENV['HEADLESS'])
+          args << "--headless"
+        end
+
+        proc = BrowserProcess.new(
+          Firefox.discover_binary,
+          *args,
           "about:blank",
         )
         at_exit { proc.kill }
