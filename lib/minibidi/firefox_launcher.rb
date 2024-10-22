@@ -31,40 +31,43 @@ module Minibidi
     def launch(&block)
       raise ArgumentError, "block is required" unless block
 
-      Dir.mktmpdir('minibidi') do |tmp|
-        create_user_profile(tmp)
-        args = [
-          "--remote-debugging-port=0",
-          "--profile #{tmp}",
-          "--no-remote",
-        ]
-        if RUBY_PLATFORM =~ /darwin/
-          args << "--foreground"
-        end
-        if %w[true 1].include?(ENV['HEADLESS'])
-          args << "--headless"
-        end
+      tmp = Dir.mktmpdir('minibidi')
+      create_user_profile(tmp)
+      args = [
+        "--remote-debugging-port=0",
+        "--profile",
+        tmp,
+        "--no-remote",
+      ]
+      if RUBY_PLATFORM =~ /darwin/
+        args << "--foreground"
+      end
+      if %w[true 1].include?(ENV['HEADLESS'])
+        args << "--headless"
+      end
 
-        proc = BrowserProcess.new(
-          Firefox.discover_binary,
-          *args,
-          "about:blank",
-        )
-        at_exit { proc.kill }
-        trap(:INT) { proc.kill ; exit 130 }
-        trap(:TERM) { proc.kill ; proc.dispose }
-        trap(:HUP) { proc.kill ; proc.dispose }
+      proc = BrowserProcess.new(
+        Firefox.discover_binary,
+        *args,
+        "about:blank",
+      )
+      at_exit do
+        proc.kill
+        FileUtils.remove_entry(tmp)
+      end
+      trap(:INT) { proc.kill ; exit 130 }
+      trap(:TERM) { proc.kill ; proc.dispose }
+      trap(:HUP) { proc.kill ; proc.dispose }
 
-        endpoint = wait_for_ws_endpoint(proc)
+      endpoint = wait_for_ws_endpoint(proc)
 
-        Async::Reactor.run do
-          Async::WebSocket::Client.connect(Async::HTTP::Endpoint.parse("#{endpoint}/session")) do |async_websocket_connection|
-            browser = Browser.new(async_websocket_connection)
-            begin
-              block.call(browser)
-            ensure
-              browser.close
-            end
+      Async::Reactor.run do
+        Async::WebSocket::Client.connect(Async::HTTP::Endpoint.parse("#{endpoint}/session")) do |async_websocket_connection|
+          browser = Browser.new(async_websocket_connection)
+          begin
+            block.call(browser)
+          ensure
+            browser.close
           end
         end
       end
