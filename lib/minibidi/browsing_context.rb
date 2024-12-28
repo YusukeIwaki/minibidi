@@ -30,6 +30,10 @@ module Minibidi
       realms.find { |realm| realm.type == 'window' }
     end
 
+    def input
+      Input.new(self)
+    end
+
     def activate
       bidi_call_async('browsingContext.activate').wait
     end

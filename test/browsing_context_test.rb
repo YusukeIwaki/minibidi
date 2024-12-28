@@ -93,4 +93,106 @@ class BrowsingContextTest < Minitest::Test
       end
     end
   end
+
+  def test_input_click
+    calls = []
+    sinatra = Class.new(Sinatra::Base) do
+      get('/') {
+        <<~HTML
+        <a href="/2" style="position: absolute; left: 0px; top: 0px; font-size: 20pt">XXXXX</a>
+        <a href="/3" style="position: absolute; left: 0px; top: 0px; font-size: 20pt">YYYYY</a>
+        HTML
+      }
+      get ('/2') { calls << '2 clicked' }
+      get ('/3') { calls << '3 clicked' }
+    end
+
+    rackup(sinatra) do |base_url|
+      Minibidi::Firefox.launch do |browser|
+        context = browser.create_browsing_context
+        context.navigate("#{base_url}/")
+        sleep 0.5
+        context.input.click(x: 10, y: 10)
+        sleep 0.5
+        assert_equal ['3 clicked'], calls
+      end
+    end
+  end
+
+  def test_input_press_key
+    calls = []
+    sinatra = Class.new(Sinatra::Base) do
+      get('/') {
+        <<~HTML
+        <form method="post" action="/submit">
+        <input id="input" name="input" type="text"/>
+        </form>
+        HTML
+      }
+      post('/submit') {
+        calls << params
+        redirect '/'
+      }
+    end
+
+    rackup(sinatra) do |base_url|
+      Minibidi::Firefox.launch do |browser|
+        context = browser.create_browsing_context
+        context.navigate("#{base_url}/")
+        context.default_realm.script_evaluate('document.querySelector("#input").focus()')
+        context.input.press_key('a')
+        context.input.press_key('B')
+        context.input.press_key('Enter')
+        sleep 0.5
+        context.default_realm.script_evaluate('document.querySelector("#input").focus()')
+        context.input.press_key('🍰')
+        context.input.press_key('Enter')
+        sleep 0.5
+        assert_equal [{'input' => 'aB'}, {'input' => '🍰'}], calls
+      end
+    end
+  end
+
+  def test_input_while_pressing_key
+    calls = []
+    sinatra = Class.new(Sinatra::Base) do
+      get('/') {
+        <<~HTML
+        <form method="post" action="/submit">
+        <div><textarea name="textarea"></textarea></div>
+        <input type="submit"/>
+        </form>
+        HTML
+      }
+      post('/submit') {
+        calls << params
+        redirect '/'
+      }
+    end
+
+    rackup(sinatra) do |base_url|
+      Minibidi::Firefox.launch do |browser|
+        context = browser.create_browsing_context
+        context.navigate("#{base_url}/")
+        context.default_realm.script_evaluate('document.querySelector("textarea").focus()')
+        context.input.while_pressing_key('Shift') do
+          context.input.press_key('a')
+          context.input.type_text('bcde')
+        end
+        context.input.press_key('Tab')
+        context.input.press_key('Enter')
+        sleep 0.5
+        context.default_realm.script_evaluate('document.querySelector("textarea").focus()')
+        context.input.type_text('bcde')
+        context.input.while_pressing_key('CtrlOrMeta') do
+          context.input.press_key('a')
+        end
+        context.input.type_text('bcde')
+        context.input.press_key('Tab')
+        context.input.press_key('Enter')
+        sleep 0.5
+        assert_equal [{'textarea' => 'ABCDE'}, {'textarea' => 'bcde'}], calls
+      end
+    end
+  end
 end
