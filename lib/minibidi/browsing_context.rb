@@ -30,6 +30,14 @@ module Minibidi
       realms.find { |realm| realm.type == 'window' }
     end
 
+    def input
+      Input.new(self)
+    end
+
+    def activate
+      bidi_call_async('browsingContext.activate').wait
+    end
+
     def capture_screenshot(origin: nil, format: nil, clip: nil)
       result = bidi_call_async('browsingContext.captureScreenshot', {
         origin: origin,
@@ -38,6 +46,12 @@ module Minibidi
       }.compact).wait
 
       Base64.strict_decode64(result[:data])
+    end
+
+    def close(prompt_unload: nil)
+      bidi_call_async('browsingContext.close', {
+        promptUnload: prompt_unload,
+      }.compact).wait
     end
 
     def reload(ignore_cache: nil, wait: nil)
@@ -55,6 +69,12 @@ module Minibidi
         },
         devicePixelRatio: device_pixel_ratio,
       }.compact).wait
+    end
+
+    def traverse_history(delta)
+      bidi_call_async('browsingContext.traverseHistory', {
+        delta: delta,
+      }).wait
     end
 
     private

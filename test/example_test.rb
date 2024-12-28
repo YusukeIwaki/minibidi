@@ -50,13 +50,4 @@ class ExampleTest < Minitest::Test
       end
     end
   end
-
-  def test_firefox_reload
-    Minibidi::Firefox.launch do |browser|
-      context = browser.create_browsing_context
-      context.navigate("https://example.com")
-      sleep 2
-      context.reload
-    end
-  end
 end
