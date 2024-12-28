@@ -195,4 +195,24 @@ class BrowsingContextTest < Minitest::Test
       end
     end
   end
+
+  def test_realm_script_evaluate
+    Minibidi::Firefox.launch do |browser|
+      context = browser.create_browsing_context
+      assert_equal 3, context.default_realm.script_evaluate('1 + 2')
+      assert_equal 3.14159, context.default_realm.script_evaluate('Math.PI').round(5)
+      assert_equal [3, "4", 5.0, { 'a' => 3, 'b' => "4" }], context.default_realm.script_evaluate('[3, "4", 5.0, { a: 3, b: "4" }]')
+      assert_equal({ 'a' => 3, 'b' => "4", 'c' => [] }, context.default_realm.script_evaluate('({ a: 3, b: "4", c: [] })'))
+      assert_equal Date.new(2021, 1, 1), context.default_realm.script_evaluate('new Date("2021-01-01")')
+      assert_equal(/A*b/mi, context.default_realm.script_evaluate('new RegExp("A*b", "mi")'))
+      assert_equal(/A*b/m, context.default_realm.script_evaluate('new RegExp("A*b", "m")'))
+      assert_equal(/A*b/, context.default_realm.script_evaluate('new RegExp("A*b", "g")'))
+      assert_nil context.default_realm.script_evaluate('undefined')
+      assert_nil context.default_realm.script_evaluate('null')
+      assert_equal 42, context.default_realm.script_evaluate('Promise.resolve().then(() => 42)')
+
+      err = assert_raises(Minibidi::Realm::ScriptEvaluationError) { context.default_realm.script_evaluate('aaa') }
+      assert_match /aaa is not defined/, err.message
+    end
+  end
 end
